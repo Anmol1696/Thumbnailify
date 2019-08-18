@@ -1,0 +1,75 @@
+versions:
+  - 0.0.1
+
+server:
+  environment: !env server_environment prod
+  host: !env server_host 0.0.0.0
+  port: !env server_port 8080
+
+logging:
+  level: !env log_level info
+  dir: !env log_dir /usr/local/var/log/porta
+  access-format: '"%r" %s %b %{X-Forwarded-For}i %{X-Trace-ID}i %{X-Token-User}o'
+  config:
+    version: 1
+    disable_existing_loggers: false
+    formatters:
+      brief:
+        format: "%(asctime)s %(message)s"
+      simple:
+        format: "%(asctime)s - %(name)s - %(levelname)s - %(module)s - %(message)s"
+  loggers:
+    - aiohttp.access
+    - aiohttp.server
+    - aiohttp.application
+    - aiohttp.general
+    - aiohttp.client
+  handler_defaults:
+    class: logging.handlers.RotatingFileHandler
+    formatter: simple
+    maxBytes: 20000000
+    backupCount: 7
+    encoding: utf8
+
+db:
+  graph:
+    backend: janusgraph
+    url: !env janusgraph_url http://localhost:8182/gremlin
+    request-limit: null
+  nosql:
+    backend: cassandra
+    hosts: !env cassandra_hosts 127.0.0.1
+    keyspace: !env cassandra_keyspace porta_auth
+    table-name: !env cassandra_table m_jwt_tokens
+    username: !env cassandra_user cassandra
+    password: !env cassandra_password
+    app-key: token
+  adfs:
+    backend: ldap
+    server: !env ldap_server ads-ldap.intra.prod.jp.local
+    authentication: NTLM
+    auto_bind: true
+    receive_timeout: 5
+    app-key: adfs
+  gateway:
+    backend: kong
+    url: !env kong_admin_url
+    host: !env kong_admin_host
+    token: !env authz_admin_token
+  hr:
+    backend: giantpanda
+    url: !env giantpanda_url http://api.giant.panda.db.rakuten.co.jp/api
+    v: 3
+    encoding: UTF-8
+    access_key: !env giantpanda_key
+    app-key: gp-api
+
+modules:
+  - api.authz
+  - api.services
+  - api.tenants
+  - api.admin
+
+features:
+  # Enable feature toggles here, for example
+  # disable_authn: true
