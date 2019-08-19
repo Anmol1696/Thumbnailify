@@ -1,4 +1,4 @@
-from .handler import image, thumbnail
+from .handlers import image, thumbnail
 
 def setup_routes(app):
     app.router.add_post("/images", image, name="image")

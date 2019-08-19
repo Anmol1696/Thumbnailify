@@ -20,7 +20,7 @@ def env_constructor(loader, node):
     """
     fields = loader.construct_scalar(node)
     env, *default = fields.split(" ")
-    value = os.environ.get("PORTA_%s" % env.upper(), " ".join(default))
+    value = os.environ.get("THUMBNAILFY_%s" % env.upper(), " ".join(default))
     return int(value) if value.isdigit() else value
 
 
@@ -31,11 +31,11 @@ def init_config(app, config_file="server.yaml"):
     with open(CONFIG_PATH / config_file) as rf:
         app[CONFIG_KEY] = yaml.load(rf)
     features = app[CONFIG_KEY]["features"] or {}
-    env_features = os.environ.get("PORTA_FEATURES")
+    env_features = os.environ.get("THUMBNAILIFY_FEATURES")
     if env_features:
         features.update(dict.fromkeys(env_features.split(","), True))
     app.feature = DefaultObjectDict(bool, features)
-    env_versions = os.environ.get("PORTA_VERSIONS")
+    env_versions = os.environ.get("THUMBNAILIFY_VERSIONS")
     if env_versions:
         versions = env_versions.split(",")
     else:
@@ -68,7 +68,7 @@ def init_logging(app):
 
 def setup_routes(app):
     for module_name in app["config"]["modules"]:
-        module_routes = importlib.import_module(f".{module_name}.routes", "porta")
+        module_routes = importlib.import_module(f".{module_name}.routes", "server")
         module_routes.setup_routes(app)
 
 

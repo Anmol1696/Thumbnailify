@@ -47,6 +47,8 @@ class ThumbHandler:
     def image(self, media_type, media_id, size="100x100"):
         ext = media_type.split("/")[1]
         input_file = (self.input_folder / f"{media_id}.{ext}").resolve()
+        if not input_file.is_file():
+            raise Exception("File not found")
         output_file = (self.output_folder / f"{media_id}.{ext}").resolve()
         with Image(filename=str(input_file)) as img:
             img.transform(resize=size)

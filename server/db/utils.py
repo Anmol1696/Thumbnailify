@@ -8,7 +8,7 @@ async def setup_databases(app):
     for db_type, db_config in config.items():
         backend = db_config.pop("backend")
         app_key = db_config.pop("app-key", None)
-        module_utils = importlib.import_module(f".{backend}.utils", "porta.db")
+        module_utils = importlib.import_module(f".{backend}.utils", "server.db")
         engine = await getattr(module_utils, f"init_{db_type}_db")(db_config)
         engines.append(engine)
         if app_key:

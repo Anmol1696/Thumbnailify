@@ -2,6 +2,6 @@ queue:
   name: !env queue_name task_queue
   host: !env queue_host localhost
 file_storage:
-  dir: !env storage_dir /home/anmol/Documents/personal/git/Thumbnailify/bin
+  dir: !env storage_dir /Users/anmol.yadav/Documents/git/Thumbnailify/bin
   input: !env input_dir raw
   output: !env ouput_dir thumbnail

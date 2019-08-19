@@ -9,7 +9,7 @@ server:
 logging:
   level: !env log_level info
   dir: !env log_dir /usr/local/var/log/porta
-  access-format: '"%r" %s %b %{X-Forwarded-For}i %{X-Trace-ID}i %{X-Token-User}o'
+  access-format: '"%r" %s %b %{X-Forwarded-For}i %{X-Trace-ID}i'
   config:
     version: 1
     disable_existing_loggers: false
@@ -32,44 +32,16 @@ logging:
     encoding: utf8
 
 db:
-  graph:
-    backend: janusgraph
-    url: !env janusgraph_url http://localhost:8182/gremlin
-    request-limit: null
-  nosql:
-    backend: cassandra
-    hosts: !env cassandra_hosts 127.0.0.1
-    keyspace: !env cassandra_keyspace porta_auth
-    table-name: !env cassandra_table m_jwt_tokens
-    username: !env cassandra_user cassandra
-    password: !env cassandra_password
-    app-key: token
-  adfs:
-    backend: ldap
-    server: !env ldap_server ads-ldap.intra.prod.jp.local
-    authentication: NTLM
-    auto_bind: true
-    receive_timeout: 5
-    app-key: adfs
-  gateway:
-    backend: kong
-    url: !env kong_admin_url
-    host: !env kong_admin_host
-    token: !env authz_admin_token
-  hr:
-    backend: giantpanda
-    url: !env giantpanda_url http://api.giant.panda.db.rakuten.co.jp/api
-    v: 3
-    encoding: UTF-8
-    access_key: !env giantpanda_key
-    app-key: gp-api
+  queue:
+    backend: rabbitmq
+    host: !env queue_host 127.0.0.1
+    worker: !env queue_name task_queue
+    app-key: queue
+  file:
+    backend: filesystem
+    dir: !env storage_dir /Users/anmol.yadav/Documents/git/Thumbnailify/bin
+    input-dir: !env input_dir raw
+    app-key: filesystem
 
 modules:
-  - api.authz
-  - api.services
-  - api.tenants
-  - api.admin
-
-features:
-  # Enable feature toggles here, for example
-  # disable_authn: true
+  - api.image
