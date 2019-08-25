@@ -1,0 +1,6 @@
+aiohttp==3.5.4
+aioredis==1.2.0
+aiofiles==0.4.0
+wand==0.5.6
+PyYAML==5.1.1
+aioamqp==0.13.0

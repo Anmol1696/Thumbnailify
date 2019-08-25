@@ -1,8 +1,9 @@
 from pathlib import Path
 from wand.image import Image
+from wand.exceptions import CorruptImageError
 
 from .utils import config
-
+from .exceptions import InvalidMedia, RawImageError, NotFound
 
 storage_config = config.get("file_storage", {})
 
@@ -48,14 +49,19 @@ class ThumbHandler:
         ext = media_type.split("/")[1]
         input_file = (self.input_folder / f"{media_id}.{ext}").resolve()
         if not input_file.is_file():
-            raise Exception("File not found")
+            raise NotFound(f"File not found `{input_file}`, file should be present")
         output_file = (self.output_folder / f"{media_id}.{ext}").resolve()
-        with Image(filename=str(input_file)) as img:
-            img.transform(resize=size)
-            img.save(filename=str(output_file))
+        try:
+            with Image(filename=str(input_file)) as img:
+                img.transform(resize=size)
+                img.save(filename=str(output_file))
+        except CorruptImageError as e:
+            raise RawImageError(f"Corroupted raw image, please try again")
+        else:
+            input_file.unlink()
 
     def default(self, media_type, **kwargs):
-        raise Exception(f"Media type {media_id} not supported, yet!!")
+        raise InvalidMedia(f"Media type {media_id} not supported, yet!!")
 
 
 thumbnailify = ThumbHandler()

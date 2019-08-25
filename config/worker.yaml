@@ -1,7 +1,11 @@
 queue:
   name: !env queue_name task_queue
-  host: !env queue_host localhost
+  host: !env queue_host queue
 file_storage:
-  dir: !env storage_dir /Users/anmol.yadav/Documents/git/Thumbnailify/bin
+  dir: !env storage_dir /usr/local/filesystem
   input: !env input_dir raw
   output: !env ouput_dir thumbnail
+db:
+  host: !env redis_host db
+  port: !env redis_port 6379
+  db: 0

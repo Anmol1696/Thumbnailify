@@ -2,13 +2,13 @@ versions:
   - 0.0.1
 
 server:
-  environment: !env server_environment prod
+  environment: !env server_environment local
   host: !env server_host 0.0.0.0
   port: !env server_port 8080
 
 logging:
   level: !env log_level info
-  dir: !env log_dir /usr/local/var/log/porta
+  dir: !env log_dir /usr/local/var/log/thumb
   access-format: '"%r" %s %b %{X-Forwarded-For}i %{X-Trace-ID}i'
   config:
     version: 1
@@ -20,10 +20,7 @@ logging:
         format: "%(asctime)s - %(name)s - %(levelname)s - %(module)s - %(message)s"
   loggers:
     - aiohttp.access
-    - aiohttp.server
     - aiohttp.application
-    - aiohttp.general
-    - aiohttp.client
   handler_defaults:
     class: logging.handlers.RotatingFileHandler
     formatter: simple
@@ -34,14 +31,22 @@ logging:
 db:
   queue:
     backend: rabbitmq
-    host: !env queue_host 127.0.0.1
-    worker: !env queue_name task_queue
+    host: !env queue_host queue
+    name: !env queue_name task_queue
     app-key: queue
   file:
     backend: filesystem
-    dir: !env storage_dir /Users/anmol.yadav/Documents/git/Thumbnailify/bin
+    dir: !env storage_dir /usr/local/filesystem
     input-dir: !env input_dir raw
+    output-dir: !env output_dir thumbnail
     app-key: filesystem
+  nosql:
+    backend: redis
+    host: !env redis_host db
+    port: !env redis_port 6379
+    db: 0
+    timeout: 10
+    app-key: redis
 
 modules:
-  - api.image
+  - api.media

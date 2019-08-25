@@ -1,6 +1,7 @@
 import logging
+import uuid
+import base64
 
-logger = logging.getLogger("aiohttp.application")
 
 def raise_json_error(exception_class, message):
     raise exception_class(

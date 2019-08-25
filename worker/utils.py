@@ -3,6 +3,8 @@ import yaml
 import logging
 from pathlib import Path
 
+from .db import setup_db
+
 CONFIG_PATH = Path(__file__).parent.parent / "config"
 
 
@@ -31,3 +33,4 @@ def setup_logging():
 
 config = init_config()
 setup_logging()
+setup_db(config["db"])

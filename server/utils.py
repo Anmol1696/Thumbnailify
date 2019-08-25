@@ -20,7 +20,7 @@ def env_constructor(loader, node):
     """
     fields = loader.construct_scalar(node)
     env, *default = fields.split(" ")
-    value = os.environ.get("THUMBNAILFY_%s" % env.upper(), " ".join(default))
+    value = os.environ.get("THUMBNAILIFY_%s" % env.upper(), " ".join(default))
     return int(value) if value.isdigit() else value
 
 
@@ -29,18 +29,14 @@ yaml.add_constructor("!env", env_constructor)
 
 def init_config(app, config_file="server.yaml"):
     with open(CONFIG_PATH / config_file) as rf:
-        app[CONFIG_KEY] = yaml.load(rf)
-    features = app[CONFIG_KEY]["features"] or {}
-    env_features = os.environ.get("THUMBNAILIFY_FEATURES")
-    if env_features:
-        features.update(dict.fromkeys(env_features.split(","), True))
-    app.feature = DefaultObjectDict(bool, features)
+        app[CONFIG_KEY] = yaml.load(rf, Loader=yaml.Loader)
     env_versions = os.environ.get("THUMBNAILIFY_VERSIONS")
     if env_versions:
         versions = env_versions.split(",")
     else:
         versions = app[CONFIG_KEY]["versions"]
     app.versions = [v.split(".")[0] for v in versions]
+    app.service = "webserver"
 
 
 def init_logging(app):
