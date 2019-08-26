@@ -8,9 +8,10 @@ Using Media instead of Image, so as to extend to video and gif in the future
   - Python
   - aiohttp
   - aioamqp
-  - aiocassandra
+  - aiofiles
+  - aioredis
 - Datastore
-  - cassandra
+  - redis
 - Worker
   - Python
 - Queue
@@ -24,7 +25,7 @@ Using Media instead of Image, so as to extend to video and gif in the future
 
 ### Deployment
 - Docker-compose
-- k8s deployments (deployed on MiniKube with scaling)
+- k8s deployments (deployed on MiniKube with scaling) (FUTURE WORK)
 
 ## Web Server
 Using Aiohttp, use header with `Content-type:image/*` to specify the header
