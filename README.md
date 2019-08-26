@@ -10,9 +10,10 @@ Using Media instead of Image, so as to extend to video and gif in the future
   - Python
   - aiohttp
   - aioamqp
+  - aiofiles
   - aioredis
 - Datastore
-  - Redis
+  - redis
 - Worker
   - Python
 - Queue
