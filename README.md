@@ -241,9 +241,11 @@ Good Read (https://medium.com/@linh22jan/load-test-with-locust-37c4f85ee2fb)
 Running 2 workers, 1 server, 1 redis, 1 rabbit mq
 
 For less number of simultaneous users and hatch rate
+
 [! Stress low users](bin/thumb_start.gif)
 
 For higher number of simultaneous users and hatch rate
+
 [! Stress high users](bin/thumb_end.gif)
 
 ```
