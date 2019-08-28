@@ -242,11 +242,11 @@ Running 2 workers, 1 server, 1 redis, 1 rabbit mq
 
 For less number of simultaneous users and hatch rate
 
-[! Stress low users](bin/thumb_start.gif)
+[! Stress low users](https://github.com/Anmol1696/Thumbnailify/blob/master/bin/thumb_start.gif)
 
 For higher number of simultaneous users and hatch rate
 
-[! Stress high users](bin/thumb_end.gif)
+[! Stress high users](https://github.com/Anmol1696/Thumbnailify/blob/master/bin/thumb_end.gif)
 
 ```
  Name                                                          # reqs      # fails     Avg     Min     Max  |  Median   req/s
