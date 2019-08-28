@@ -140,3 +140,69 @@ The capability of worker to crunch the media itself is plugable and extendable e
 - Event Driven design with Kafka or Pub/Sub can allow us to merge both the DB and the queue into one.
 - Use kafka as the single source of truth. The state of the media can also be managed easily by each process being pushed back into Pub/Sub. Finding the state of the operation will be more transparent
 - Filesystem might be best kept seperate, not sure how filesystems are handled in microservice arch.
+
+
+## Testing
+### Integration Tests
+- Integration Tests in `pytest`
+- Currently all tests are end to end tests. Idealy each endpoint should have its own set of tests so as to find out the exact point of failure, while we are developing and debuging code
+- For running the integration tests, we run these tests against a working full service, with server, worker, redis, rabbitmq.
+- Integration tests come with default test data, in the `Thumbnailify/tests/data`
+
+#### Running Test
+- Need a running system, if system running at some address, can modify `Thumbnailify/tests/conf.ini``base-url` entry
+- By using Makefile `make test-integration`
+- Direct run `pytest -vv -x --tb=auto`
+
+#### Results
+```
+$ make test-integration
+pytest -vv -x --tb=auto
+========================================= test session starts ==========================================
+platform linux -- Python 3.7.3, pytest-5.0.0, py-1.8.0, pluggy-0.12.0 -- /usr/bin/python3.7
+cachedir: .pytest_cache
+rootdir: /home/anmol/Documents/personal/git/Thumbnailify
+plugins: slack-2.0.0
+collected 7 items
+
+tests/integration/test_post_images.py::test_correct_images[image1.jpg] PASSED                    [ 14%]
+tests/integration/test_post_images.py::test_correct_images[image1.jpeg] PASSED                   [ 28%]
+tests/integration/test_post_images.py::test_correct_images[image1.png] PASSED                    [ 42%]
+tests/integration/test_post_images.py::test_correct_images[sample.gif] PASSED                    [ 57%]
+tests/integration/test_post_images.py::test_invalid_base64_encoding PASSED                       [ 71%]
+tests/integration/test_post_images.py::test_invalid_content_type PASSED                          [ 85%]
+tests/integration/test_post_images.py::test_invalid_images PASSED                                [100%]
+
+======================================= 7 passed in 9.79 seconds =======================================
+```
+#### Conclusions and Improvements
+- Tests do not cover the all overall cases, but some cases of data corrouption that might happen from data transfer or packet dropping, that are also considered can not be modeled unless we seperate out the tests for worker and server (Future work, worker tests, server tests and existing e2e tests)
+- Running Integration tests with failure tests, that is, finding the behavior of the system incase some or more services are down. Example, what happens when filesystem is down, redis is down, queue is down
+
+### Stress Tests
+- Running stress tests with Locust, a simple python load generator
+- Locust doesn't create constant loads, but more like, mimics user behaviour, alternative and future work would be tests with Jmeter
+- Reasons of choosing locust
+  - Strong support for python for creating load and user behaviour
+  - Good UI with real time charts and simple web UI
+  - Can be distributed in the future
+  - Good for quick stress tests
+- Tests are for sending image and checking the status of the image, thumbnail endpoint is not load tested for now, can be added very easiliy
+- User behavior that is stress tested is as follows
+  - User makes a `Post` request to `/images` endpoint, and get `media_id`
+  - Check the status of media by `Get` at `/images/{media_id}`, this step happens 10 times
+  - Delete the media from db and images with `Delete` at `/images/{media_id}/thumbnail`
+- Locust has concept of `Number of unique users` and `Hatch rate`. In short this does the following
+  - `Hatch rate` number of users will be spawned for every second until it reached `Number of unique users`
+  - Each users does the above mentioned, `Post`, `Get` (10 times), `Delete`
+  - Loucst gives a number `RPS` which is the thoughput that our system can handle
+
+##### NOTE
+```
+Overall throughput tends to decrease as you increase the response time for an average transaction.
+The reason is that after sending the 1st request, locust needs to wait until the request to be
+completed/processed to send the 2nd request. So that it’s tricky to use Locust if you want to
+have a fixed throughput.
+
+Good Read (https://medium.com/@linh22jan/load-test-with-locust-37c4f85ee2fb)
+```
