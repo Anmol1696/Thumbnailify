@@ -130,7 +130,7 @@ The capability of worker to crunch the media itself is plugable and extendable e
 - Raw media file is deleted for testing purposes and making sure the disk space doesn't increase (better to comeup with some retension policies)
 
 
-## General Notes on Design
+## General Notes on Design Improvements
 ### Microservice Design
 - Microservices arch best practices recommends there should be no database sharing, each service should maintain there oown data/state etc.
 - Might not be a good idea sharing both db and filesystems between worker and webserver, if we were to consider workers as a service (WAAS).
@@ -139,6 +139,4 @@ The capability of worker to crunch the media itself is plugable and extendable e
 ### Event Driven Design
 - Event Driven design with Kafka or Pub/Sub can allow us to merge both the DB and the queue into one.
 - Use kafka as the single source of truth. The state of the media can also be managed easily by each process being pushed back into Pub/Sub. Finding the state of the operation will be more transparent
-- Filesystem might be best kept seperate
-
-
+- Filesystem might be best kept seperate, not sure how filesystems are handled in microservice arch.
