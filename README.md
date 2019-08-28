@@ -1,17 +1,15 @@
 # Thumbnailify
 Service for creating thumbnails from photos
 
-Using Media instead of Image, so as to extend to video and gif in the future
-
 #### NOTE: Sorry in advance for alot of spelling mistakes, will try to catch them all
 
 ## Tech Stack
 - Web Server
   - Python
   - aiohttp
-  - aioamqp
-  - aiofiles
-  - aioredis
+  - aioamqp - async amqp python implementation
+  - aiofiles - async files module
+  - aioredis - async redis library
 - Datastore
   - redis
 - Worker
@@ -30,6 +28,7 @@ Using Media instead of Image, so as to extend to video and gif in the future
 - Docker-compose
 - k8s deployments (Future works)
 
+Using Media instead of Image, so as to extend to videos in the future
 
 ## Web Server
 ### Tech Stack and design
@@ -55,8 +54,36 @@ DB engines are loaded to the `app` context on the start of the application as pe
 | `/images` | `GET` | Return all itmes and ids from the database | Future Works |
 | `/images` | `POST` | Send Base64 encoded media with media type in headers in `Content-Type` | Done |
 | `/images/<id>` | `GET` | Get status of the image and where the image is currently in the workflow | Done |
-| `/images/<id>` | `DELETE` | Delete file, thumbail and entry in database | Done |
+| `/images/<id>` | `DELETE` | Delete file, thumbail and entry in database, no need for request body | Done |
 | `/images/<id>/thumbnail` | `GET` | Get thumbail as base64 encoded data with type in header | Done |
+
+### Request Body
+```
+POST /images/<id>/thumbnail
+
+Headers: {"Content-Type": "<content ext and type>"} // image/png. image/gif
+
+BASE64 encoded image in Body
+```
+
+### Response Bodies
+```
+GET /images/<id>
+{
+    "media_id": "<media_id uuid>",
+    "media_type": "<content type>", // sample, image/png. image/gif
+    "service": "<last service that updated this log>", // worker, webserver
+    "message": "<current message>",
+    "state": "<Current state of media>" // Error, Processing, Completed
+}
+```
+```
+GET /images/<id>/thumbnail
+
+Headers: {"Content-Type": "<content ext and type>"} // image/png. image/gif
+
+BASE64 encoded image in Body
+```
 
 ### WorkFlow
 - User sends media data to the `/images` endpoint as base64 encoded text as POST with header `Content-Type=image/<png or jpg or jpeg>`
@@ -98,7 +125,7 @@ Current structure is, each key (`media_id`) has the following fields with possib
 Using shared volume for storing incoming raw media as well as thumbnail image that are created
 Use 2 folders, for storing raw/input media and other for thumbnail
 Filesystems are good enough, but we can use `DBFS` too if nessasary
-2 Folders also ensures, that worker and webserver are reading from one and wrting to other, to avoid 
+2 Folders also ensures, that worker and webserver are reading from one and wrting to other, to avoid
 corrouption of data in the long run
 
 ## Rabit MQ
@@ -130,16 +157,14 @@ The capability of worker to crunch the media itself is plugable and extendable e
 - Raw media file is deleted for testing purposes and making sure the disk space doesn't increase (better to comeup with some retension policies)
 
 
-## General Notes on Design Improvements
-### Microservice Design
-- Microservices arch best practices recommends there should be no database sharing, each service should maintain there oown data/state etc.
-- Might not be a good idea sharing both db and filesystems between worker and webserver, if we were to consider workers as a service (WAAS).
-- Not super sure about how filesystems are handled in micro services. One way could be to create a FileSystem as a service, that stores and gets files. But in cases for large files this might jam up the network too.
-
-### Event Driven Design
-- Event Driven design with Kafka or Pub/Sub can allow us to merge both the DB and the queue into one.
-- Use kafka as the single source of truth. The state of the media can also be managed easily by each process being pushed back into Pub/Sub. Finding the state of the operation will be more transparent
-- Filesystem might be best kept seperate, not sure how filesystems are handled in microservice arch.
+## Running System
+- Using Makefile, `make`, this basically runs `docker-compose up`, these start following
+  - 1 Container of web-server
+  - 1 Redis Container
+  - 1 Rabbit MQ Container
+  - 2 Worker Container (Replicas can be increased for better performance)
+- Docker-compose has a flag for linking dependencies of containers, but I was not able make starting of server and worker before redis actually starts, hence both worker and server keeps on restarting untill it works, can be solved by health checks in k8s deployment or statefull sets
+- Better to creating services and deployments in K8s
 
 
 ## Testing
@@ -191,11 +216,11 @@ tests/integration/test_post_images.py::test_invalid_images PASSED               
 - User behavior that is stress tested is as follows
   - User makes a `Post` request to `/images` endpoint, and get `media_id`
   - Check the status of media by `Get` at `/images/{media_id}`, this step happens 10 times
-  - Delete the media from db and images with `Delete` at `/images/{media_id}/thumbnail`
 - Locust has concept of `Number of unique users` and `Hatch rate`. In short this does the following
   - `Hatch rate` number of users will be spawned for every second until it reached `Number of unique users`
-  - Each users does the above mentioned, `Post`, `Get` (10 times), `Delete`
+  - Each users does the above mentioned, `Post`, `Get` (10 times)`
   - Loucst gives a number `RPS` which is the thoughput that our system can handle
+- Docker Volume needs to be dropped after performing stress tests, since the images will just start pilling up (Need a better solution)
 
 ##### NOTE
 ```
@@ -206,3 +231,66 @@ have a fixed throughput.
 
 Good Read (https://medium.com/@linh22jan/load-test-with-locust-37c4f85ee2fb)
 ```
+
+### Running Tests
+- Test run against running system, if running system at some other IP, update `Thumbnailify/tests/conf.ini`, `base-url`
+- Using make, `make test-integration` starts the locust at 8089 port, there you can specify number of unique users and hatch rate.
+  - Running stress without UI as `locust -f --no-web -c <users> -r <hatch-rate> --run-time 1h30m`
+
+### Results
+Running 2 workers, 1 server, 1 redis, 1 rabbit mq
+
+For less number of simultaneous users and hatch rate
+[! Stress low users](bin/thumb_start.gif)
+
+For higher number of simultaneous users and hatch rate
+[! Stress high users](bin/thumb_end.gif)
+
+```
+ Name                                                          # reqs      # fails     Avg     Min     Max  |  Median   req/s
+--------------------------------------------------------------------------------------------------------------------------------------------
+ GET Get Image Status                                          141722     0(0.00%)     277       3    1333  |     230  292.30
+ POST Send Image                                                14500     0(0.00%)     364       4    1504  |     320   39.70
+--------------------------------------------------------------------------------------------------------------------------------------------
+ Total                                                         156222     0(0.00%)                                     332.00
+
+Percentage of the requests completed within given times
+ Name                                                           # reqs    50%    66%    75%    80%    90%    95%    98%    99%   100%
+--------------------------------------------------------------------------------------------------------------------------------------------
+ GET Get Image Status                                           141722    230    330    400    450    590    700    830    910   1300
+ POST Send Image                                                 14500    320    440    530    590    730    850   1000   1100   1500
+--------------------------------------------------------------------------------------------------------------------------------------------
+ Total                                                          156222    240    340    410    460    600    720    850    940   1500
+```
+
+### Conclusion
+- Aiohttp servers need to be scaled out, not up, since it is bound by I/O calls
+- Exact bottle necks need to be figured out by monitoring and logging checks
+- Running on local machine, running on bigger cluster and dedicated resources, better results
+
+
+## Code Improvements and Production Ready
+- Python exceptions are handled loosely now, using `except Exception` is not a good practice, since the excetions should be more precise
+- Logging can be improved, server logs not following the log format, needs some debugging
+- Tests are not automated, can be automated based on the CI/CD pipelines as well as creating test services and deployments, automatic generation of reports
+- For production, using k8s with auto scaling, monitoring to figure out the bottle necks of the systems, alerts on logs and services by either ELK or using coustom GPC (no idea of inbuilt in tools that GCP provides, yet !!)
+
+
+## General Notes on Design Improvements
+### Microservice Design
+- Microservices arch best practices recommends there should be no database sharing, each service should maintain there oown data/state etc.
+- Might not be a good idea sharing both db and filesystems between worker and webserver, if we were to consider workers as a service (WAAS).
+- Not super sure about how filesystems are handled in micro services. One way could be to create a FileSystem as a service, that stores and gets files. But in cases for large files this might jam up the network too.
+
+### Event Driven Design
+- Event Driven design with Kafka or Pub/Sub can allow us to merge both the DB and the queue into one
+- Use kafka as the single source of truth. The state of the media can also be managed easily by each process being pushed back into Pub/Sub. Finding the state of the operation will be more transparent
+- Filesystem might be best kept seperate, not sure how filesystems are handled in microservice arch.
+
+### Performance and More research
+- Scaling out will increase the through-put, there are 3 main issues that could be the bottle necks
+  - File I/O, reading and writing from the server is done using aiofiles
+  - Scaling out queue and db also will be required when scalling the server, else they will become the bottlenecks
+- Exact bottle necks can be identified only after logging and monitoring (Not enough exp with scalling)
+- Base64 encoding increases the data by 33%, since images are any way bigger then std http request body, better to use compression with content-type `gzip` or something similar (need more research in that direction)
+- Upper limit of http body is hit for with 1MB size, hence only small images and Gif work, solution could be to accept it in a stream, but there must be a better way

@@ -15,10 +15,17 @@ services:
     - redis
     - rabbitmq
     restart: "always"
+    deploy:
+      restart_policy:
+        condition: on-failure
   worker:
     build:
       context: .
       dockerfile: worker/docker/Dockerfile
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
     volumes:
     - "filesystem-volume:/usr/local/filesystem"
     links:

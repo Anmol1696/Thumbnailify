@@ -1,6 +1,12 @@
 include .env
 
-.PHONY: all worker server test-integration
+.PHONY: all worker server test-integration test-stress
+
+all:
+	docker-compose up
+
+deploy:
+	docker-compose up --scale worker=2
 
 worker:
 	python3.7 -m worker.consume

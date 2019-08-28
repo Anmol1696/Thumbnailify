@@ -27,7 +27,7 @@ class UserBehavior(TaskSequence):
             data=self.image_data[image],
             headers={"Content-Type": f"image/{self.ext}"}
         )
-        self.image_id = response.json().get("id")
+        self.image_id = response.json().get("media_id")
 
     @seq_task(2)
     @task(10)
