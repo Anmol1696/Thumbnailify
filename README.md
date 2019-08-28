@@ -30,6 +30,23 @@ Service for creating thumbnails from photos
 
 Using Media instead of Image, so as to extend to videos in the future
 
+## Running System
+- Using Makefile, `make`, this basically runs `docker-compose up`, these start following
+  - 1 Container of web-server
+  - 1 Redis Container
+  - 1 Rabbit MQ Container
+  - 2 Worker Container (Replicas can be increased for better performance)
+- Have a look at the `Makefile` for other commands
+- Docker-compose has a flag for linking dependencies of containers, but I was not able make starting of server and worker before redis actually starts, hence both worker and server keeps on restarting untill it works, can be solved by health checks in k8s deployment or statefull sets
+- Better to creating services and deployments in K8s
+- Can take env variables for the config as well, Optional, default config will work with docker-compose, but for running system locally we can use this `.env` file as well
+  ```
+    THUMBNAILIFY_QUEUE_HOST=0.0.0.0
+    THUMBNAILIFY_STORAGE_DIR=/home/anmol/Documents/personal/git/Thumbnailify/bin
+    THUMBNAILIFY_REDIS_HOST=0.0.0.0
+  ```
+
+
 ## Web Server
 ### Tech Stack and design
 Webserver is built using aiohttp and asyncio libraries. Aiohttp is completly async framework and
@@ -155,16 +172,6 @@ The capability of worker to crunch the media itself is plugable and extendable e
 ### Notes
 - Worker can handle some exceptions, but there is not `try/except` block for the main function, hence the workers need to be deployed with some sort of restart and deployment policies in docker-compose or k8s itself
 - Raw media file is deleted for testing purposes and making sure the disk space doesn't increase (better to comeup with some retension policies)
-
-
-## Running System
-- Using Makefile, `make`, this basically runs `docker-compose up`, these start following
-  - 1 Container of web-server
-  - 1 Redis Container
-  - 1 Rabbit MQ Container
-  - 2 Worker Container (Replicas can be increased for better performance)
-- Docker-compose has a flag for linking dependencies of containers, but I was not able make starting of server and worker before redis actually starts, hence both worker and server keeps on restarting untill it works, can be solved by health checks in k8s deployment or statefull sets
-- Better to creating services and deployments in K8s
 
 
 ## Testing
