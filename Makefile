@@ -1,6 +1,6 @@
 include .env
 
-.PHONY: all worker server test-integration test-stress
+.PHONY: all deploy worker server test-integration test-stress
 
 all:
 	docker-compose up
