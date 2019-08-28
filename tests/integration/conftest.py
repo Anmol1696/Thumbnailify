@@ -18,7 +18,6 @@ def config_data():
 @pytest.fixture
 def image_encoder(config_data):
     base_dir = Path(config_data["data"]["dir"])
-
     return lambda x: file_encoder(base_dir / x)
 
 
@@ -28,16 +27,15 @@ def verify_image():
         decode = base64.b64decode(encoded_image)
         with Image(file=io.BytesIO(decode)) as img:
             return img.width <= max_width and img.height <= max_height
-
     return factory
 
 
 @pytest.fixture
 def make_requests(config_data):
     endpoint_map = config_data["server-endpoint"]
-    def factory(endpoint, method, data=None, **kwargs):
+    def factory(endpoint, method, data=None, media_id="", **kwargs):
         action = getattr(requests, method)
         url = endpoint_map.get(endpoint)
-        resp = action(url, data=data, headers=kwargs)
+        resp = action(url.format(id=media_id), data=data, headers=kwargs)
         return resp
     return factory
